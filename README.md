@@ -1,32 +1,28 @@
-# React + TypeScript + Vite
+# Фронтенд-приложение: Расчет стоимости строительства
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Базовое одностраничное приложение (SPA) на React для просмотра укрупненных показателей стоимости строительства зданий. Разработано в рамках лабораторной работы №5. На данном этапе приложение работает с mock-объектами в режиме неавторизованного пользователя (гостя).
 
-Currently, two official plugins are available:
+## Структура приложения и навигация
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Навигация осуществляется через закрепленную нижнюю панель вкладок (TabBar). Доступны две основные страницы. Вкладки «Добавить» и «Вход» заблокированы и служат заглушками для будущих лабораторных работ.
 
-## React Compiler
+### 1. Страница «Плитка» (Каталог)
+Отображает список всех опубликованных строительных проектов в виде сетки в два столбца.
+* **Поля и элементы:**
+  * Слайдер фильтрации проектов по минимальной стоимости (руб/м²).
+  * Карточки проектов: отображают фотографию (или изображение по умолчанию), название, цену и количество лайков.
+* **Кнопки:**
+  * Кнопка «Найти» для применения фильтра.
+  * При клике на карточку происходит переход на страницу «Лента», начиная с выбранного проекта.
+  * *Примечание: Кнопка «Удалить» на карточках скрыта, так как интерфейс работает в режиме просмотра для гостя.*
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
-
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+### 2. Страница «Лента»
+Отображает детальную информацию о проекте в вертикальном формате с медиафайлом на фоне.
+* **Поля и элементы:**
+  * Фоновое видео или изображение (при отсутствии данных подгружается дефолтный медиафайл).
+  * Название проекта, стоимость (руб/м²) и площадь (м²).
+  * Текстовое описание строительного объекта.
+  * Индикатор количества лайков.
+* **Кнопки:**
+  * Текстовый переключатель «Еще/Скрыть» для разворачивания и сворачивания длинного описания.
+  * Кнопка «Далее» для перехода к следующей карточке объекта в рамках текущего отфильтрованного списка.
