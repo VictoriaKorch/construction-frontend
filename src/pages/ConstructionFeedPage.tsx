@@ -1,36 +1,38 @@
 import { FC, useEffect, useState } from "react";
-import { useParams, useNavigate, useOutletContext } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { type ConstructionResponseDto, CONSTRUCTION_MOCK } from "../modules/construction_mock";
-import { type AppOutletContext } from "../AppLayout";
 
 const defaultImage = "/default.jpg";
 
 export const ConstructionFeedPage: FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { cards } = useOutletContext<AppOutletContext>();
-  const [pageData, setPageData] = useState<ConstructionResponseDto>();
+  const [pageData, setPageData] = useState<ConstructionResponseDto | null>(null);
+
+  const publishedList = CONSTRUCTION_MOCK.filter(item => item.status === 'published');
 
   useEffect(() => {
-    let currentId = id;
-    if (!currentId && cards.length > 0) {
-      currentId = String(cards[0].id);
+    if (!publishedList.length) return;
+
+    if (!id) {
+      setPageData(publishedList[0]);
+      return;
     }
 
-    if (currentId) {
-      const fromMock = CONSTRUCTION_MOCK.find(item => String(item.id) === currentId);
-      setPageData(fromMock || CONSTRUCTION_MOCK[0]);
+    const foundItem = publishedList.find(item => String(item.id) === id);
+    if (foundItem) {
+      setPageData(foundItem);
     } else {
-      setPageData(CONSTRUCTION_MOCK[0]);
+      setPageData(publishedList[0]);
     }
-  }, [id, cards]);
+  }, [id]);
 
   const handleNext = () => {
-    if (!pageData || cards.length === 0) return;
-    const currentIndex = cards.findIndex(item => item.id === pageData.id);
-    // Цикличное перелистывание по массиву отфильтрованных карточек
-    const nextIndex = (currentIndex + 1) % cards.length;
-    const nextItem = cards[nextIndex];
+    if (!pageData) return;
+    const currentIndex = publishedList.findIndex(item => item.id === pageData.id);
+    const nextIndex = (currentIndex + 1) % publishedList.length;
+    const nextItem = publishedList[nextIndex];
+    
     if (nextItem) {
       navigate(`/construction/feed/${nextItem.id}`);
     }
