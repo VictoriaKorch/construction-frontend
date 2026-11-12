@@ -1,51 +1,133 @@
-import { FC, useEffect, useState } from "react";
+import { FC, useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { type ConstructionResponseDto, CONSTRUCTION_MOCK } from "../modules/construction_mock";
+import { useDispatch, useSelector } from "react-redux";
+import type { AppDispatch, RootState } from "../store";
+import { toggleLikeAsync } from "../store/constructionSlice";
+import { api } from "../api";
+import { CONSTRUCTION_MOCK, type ConstructionResponseDto } from "../modules/construction_mock";
+import axios from "axios";
 
 const defaultImage = "/default.jpg";
 
 export const ConstructionFeedPage: FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
+  
   const [pageData, setPageData] = useState<ConstructionResponseDto | null>(null);
+  const [loading, setLoading] = useState(true);
+  
+  const lastFetchedId = useRef<string | null>(null);
+  const isAuthenticated = useSelector((state: RootState) => state.user.isAuthenticated);
 
-  const publishedList = CONSTRUCTION_MOCK.filter(item => item.status === 'published');
+  // Функция для работы с мок-данными, когда бэкенд выключен (502, 404 или ошибка сети)
+  const getMockFeed = (targetId?: string, isNext: boolean = false) => {
+    const publishedMocks = CONSTRUCTION_MOCK.filter(item => item.status === 'published');
+    if (publishedMocks.length === 0) return null;
 
-  useEffect(() => {
-    if (!publishedList.length) return;
-
-    if (!id) {
-      setPageData(publishedList[0]);
-      return;
+    if (!targetId || !isNext) {
+      // Если ID нет или это первый вход — возвращаем самую первую карточку
+      return publishedMocks[0];
     }
 
-    const foundItem = publishedList.find(item => String(item.id) === id);
-    if (foundItem) {
-      setPageData(foundItem);
+    // Ищем текущий индекс
+    const currentIndex = publishedMocks.findIndex(item => String(item.id) === String(targetId));
+    
+    if (currentIndex === -1 || currentIndex >= publishedMocks.length - 1) {
+      // Если дошли до конца или карточка не найдена — циклично возвращаем первую
+      return publishedMocks[0];
     } else {
-      setPageData(publishedList[0]);
+      // Возвращаем следующую карточку
+      return publishedMocks[currentIndex + 1];
+    }
+  };
+
+  const fetchFeed = async (targetId?: string, isNext: boolean = false) => {
+    setLoading(true);
+    try {
+      const queryParams: Record<string, string> = {};
+      if (targetId) queryParams.id = targetId;
+      if (isNext) queryParams.next = 'true';
+
+      const response = await api.instance.get('/api/construction/feed', {
+        params: queryParams
+      });
+
+      const item = response.data.ConstructionService || response.data;
+
+      if (item && item.id) {
+        setPageData(item);
+        lastFetchedId.current = String(item.id);
+        
+        if (isNext || !targetId) {
+          navigate(`/construction/feed/${item.id}`, { replace: true });
+        }
+      } else {
+        // Если структура ответа странная — падаем на моки
+        const mockItem = getMockFeed(targetId, isNext);
+        if (mockItem) {
+          setPageData(mockItem);
+          navigate(`/construction/feed/${mockItem.id}`, { replace: true });
+        }
+      }
+    } catch (error: unknown) {
+      // ЕСЛИ БЭКЕНД ВЫКЛЮЧЕН (502, 404, Network Error) — ИСПОЛЬЗУЕМ МОКИ ДЛЯ ГОСТЯ
+      if (axios.isAxiosError(error)) {
+        const mockItem = getMockFeed(targetId, isNext);
+        if (mockItem) {
+          setPageData(mockItem);
+          lastFetchedId.current = String(mockItem.id);
+          navigate(`/construction/feed/${mockItem.id}`, { replace: true });
+        }
+      } else {
+        console.error("Ошибка загрузки ленты:", error);
+        setPageData(null);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!id) {
+      fetchFeed(undefined, true);
+    } else if (lastFetchedId.current !== id) {
+      fetchFeed(id, false);
     }
   }, [id]);
 
   const handleNext = () => {
-    if (!pageData) return;
-    const currentIndex = publishedList.findIndex(item => item.id === pageData.id);
-    const nextIndex = (currentIndex + 1) % publishedList.length;
-    const nextItem = publishedList[nextIndex];
-    
-    if (nextItem) {
-      navigate(`/construction/feed/${nextItem.id}`);
+    if (pageData) {
+      fetchFeed(String(pageData.id), true);
     }
   };
 
-  if (!pageData) return <div style={{display:'flex', height:'100%', justifyContent:'center', alignItems:'center'}}>Загрузка...</div>;
+  const handleLikeClick = () => {
+    if (pageData && isAuthenticated === 1) {
+      dispatch(toggleLikeAsync({ id: pageData.id, currentLike: pageData.isLiked }));
+
+      const newIsLiked = pageData.isLiked === 1 ? 0 : 1;
+      const newCount = newIsLiked === 1 ? pageData.likesCount + 1 : pageData.likesCount - 1;
+
+      setPageData({
+        ...pageData,
+        isLiked: newIsLiked,
+        likesCount: newCount
+      });
+    }
+  };
+
+  if (loading) return <div style={{display:'flex', height:'100%', justifyContent:'center', alignItems:'center'}}>Загрузка...</div>;
+  if (!pageData) return <div style={{display:'flex', height:'100%', justifyContent:'center', alignItems:'center'}}>Нет данных для отображения</div>;
+
+  const isLikeActive = isAuthenticated === 1 && pageData.isLiked === 1;
 
   return (
     <div className="feed-container">
       <div className="video-wrapper">
         {pageData.videoUrl ? (
           <video 
-            src={`/${pageData.videoUrl}`} 
+            src={`/construction-assets/${pageData.videoUrl}`} 
             className="feed-video" 
             autoPlay 
             muted 
@@ -54,7 +136,7 @@ export const ConstructionFeedPage: FC = () => {
           />
         ) : (
           <img 
-            src={pageData.imageUrl ? `/${pageData.imageUrl}` : defaultImage} 
+            src={pageData.imageUrl ? `/construction-assets/${pageData.imageUrl}` : defaultImage} 
             className="feed-video" 
             alt={pageData.title} 
           />
@@ -67,11 +149,28 @@ export const ConstructionFeedPage: FC = () => {
               
               <div className="service-details">
                 <div className="feed-sidebar">
-                  <div className="sidebar-item">
-                    <div className="sidebar-icon">❤️</div>
+                  <button 
+                    onClick={handleLikeClick} 
+                    className="sidebar-item" 
+                    style={{ 
+                      background: 'none', 
+                      border: 'none', 
+                      cursor: isAuthenticated === 1 ? 'pointer' : 'default' 
+                    }}
+                  >
+                    <div 
+                      className="sidebar-icon" 
+                      style={{ 
+                        color: isLikeActive ? '#ff4040' : '#ffffff',
+                        borderColor: isLikeActive ? '#ff4040' : 'rgba(255,255,255,0.15)',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      ❤️
+                    </div>
                     <span className="sidebar-text">{pageData.likesCount}</span>
-                  </div>
-                  <button onClick={handleNext} className="sidebar-item">
+                  </button>
+                  <button onClick={handleNext} className="sidebar-item" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
                     <div className="sidebar-icon">↓</div>
                     <span className="sidebar-text">Далее</span>
                   </button>

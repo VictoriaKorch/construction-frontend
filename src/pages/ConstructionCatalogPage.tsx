@@ -1,41 +1,32 @@
-import { FC, useEffect, useState, FormEvent } from "react";
+import { FC, useEffect, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { type ConstructionResponseDto, CONSTRUCTION_MOCK } from "../modules/construction_mock";
+import { useDispatch, useSelector } from "react-redux";
+import type { AppDispatch, RootState } from "../store";
+import { getConstructionsList, setMinPrice, setMaxPrice, deleteConstructionAsync } from "../store/constructionSlice";
 import { ConstructionCard } from "../components/ConstructionCard";
 import { ConstructionFilter } from "../components/ConstructionFilter";
 
 export const ConstructionCatalogPage: FC = () => {
-  const [minPrice, setMinPrice] = useState(0);
-  const [maxPrice, setMaxPrice] = useState(100000);
-  const [items, setItems] = useState<ConstructionResponseDto[]>([]);
+  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
+  
+  const { items, minPrice, maxPrice, sliderMin, sliderMax, loading } = useSelector((state: RootState) => state.constructions);
+  
+  // Достаем статус авторизации из Redux
+  const isAuthenticated = useSelector((state: RootState) => state.user.isAuthenticated);
 
   const handleSearch = (e?: FormEvent) => {
     if (e) e.preventDefault();
-    
-    let currentMin = minPrice;
-    let currentMax = maxPrice;
-
-    // Защита от перехлеста ползунков
-    if (currentMin > currentMax) {
-      currentMin = maxPrice;
-      currentMax = minPrice;
-      setMinPrice(currentMin);
-      setMaxPrice(currentMax);
-    }
-
-    const results = CONSTRUCTION_MOCK.filter(item => 
-      item.status === 'published' && 
-      (item.price || 0) >= currentMin && 
-      (item.price || 0) <= currentMax
-    );
-    setItems(results);
+    dispatch(getConstructionsList(false));
   };
 
   useEffect(() => {
-    handleSearch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    // Если sliderMax равен 0, значит мы зашли первый раз. 
+    // Если больше 0 — значит фильтры уже были настроены (вернулись из ленты), запрос делать не нужно.
+    if (sliderMax === 0) {
+      dispatch(getConstructionsList(true));
+    }
+  }, [dispatch, sliderMax]);
 
   return (
     <div className="tile-container">
@@ -44,21 +35,30 @@ export const ConstructionCatalogPage: FC = () => {
       <ConstructionFilter 
         minPrice={minPrice}
         maxPrice={maxPrice}
-        setMinPrice={setMinPrice}
-        setMaxPrice={setMaxPrice}
+        sliderMin={sliderMin}
+        sliderMax={sliderMax}
+        setMinPrice={(val) => dispatch(setMinPrice(val))}
+        setMaxPrice={(val) => dispatch(setMaxPrice(val))}
         onSearch={handleSearch}
       />
 
-      <div className="services-grid">
-        {items.map((item) => (
-          <ConstructionCard 
-            key={item.id} 
-            {...item} 
-            onClick={() => navigate(`/construction/feed/${item.id}`)} 
-          />
-        ))}
-        {items.length === 0 && <p style={{ gridColumn: 'span 2', textAlign: 'center' }}>Нет услуг по фильтру</p>}
-      </div>
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '20px' }}>Загрузка...</div>
+      ) : (
+        <div className="services-grid">
+          {items.map((item) => (
+            <ConstructionCard 
+              key={item.id} 
+              {...item} 
+              // ПРИНУДИТЕЛЬНО скрываем кнопку удаления, если интерфейс в режиме Гостя (0)
+              isCreator={isAuthenticated === 1 ? item.isCreator : 0} 
+              onClick={() => navigate(`/construction/feed/${item.id}`)} 
+              onDelete={(id) => dispatch(deleteConstructionAsync(id))}
+            />
+          ))}
+          {items.length === 0 && <p style={{ gridColumn: 'span 2', textAlign: 'center' }}>Нет услуг по фильтру</p>}
+        </div>
+      )}
     </div>
   );
 };

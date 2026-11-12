@@ -3,6 +3,8 @@ import { FC, FormEvent } from "react";
 interface IFilterProps {
   minPrice: number;
   maxPrice: number;
+  sliderMin: number;
+  sliderMax: number;
   setMinPrice: (val: number) => void;
   setMaxPrice: (val: number) => void;
   onSearch: (e?: FormEvent) => void;
@@ -11,6 +13,8 @@ interface IFilterProps {
 export const ConstructionFilter: FC<IFilterProps> = ({
   minPrice,
   maxPrice,
+  sliderMin,
+  sliderMax,
   setMinPrice,
   setMaxPrice,
   onSearch
@@ -22,17 +26,17 @@ export const ConstructionFilter: FC<IFilterProps> = ({
           <label>От: <b>{minPrice} руб/м²</b></label>
         </div>
         <div className="search-bar slider-bar">
-          <span className="slider-bound">0</span>
+          <span className="slider-bound">{sliderMin}</span>
           <input 
             type="range" 
-            min="0" 
-            max="100000" 
+            min={sliderMin} 
+            max={sliderMax} 
             step="1000"
             value={minPrice} 
             onChange={(e) => setMinPrice(Number(e.target.value))} 
             className="search-slider" 
           />
-          <span className="slider-bound">100к</span>
+          <span className="slider-bound">{sliderMax}</span>
         </div>
       </div>
 
@@ -41,17 +45,17 @@ export const ConstructionFilter: FC<IFilterProps> = ({
           <label>До: <b>{maxPrice} руб/м²</b></label>
         </div>
         <div className="search-bar slider-bar">
-          <span className="slider-bound">0</span>
+          <span className="slider-bound">{sliderMin}</span>
           <input 
             type="range" 
-            min="0" 
-            max="100000" 
+            min={sliderMin} 
+            max={sliderMax} 
             step="1000"
             value={maxPrice} 
             onChange={(e) => setMaxPrice(Number(e.target.value))} 
             className="search-slider" 
           />
-          <span className="slider-bound">100к</span>
+          <span className="slider-bound">{sliderMax}</span>
         </div>
       </div>
 
