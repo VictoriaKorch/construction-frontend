@@ -90,7 +90,7 @@ const constructionSlice = createSlice({
         state.loading = false;
         const { data, isInitial } = action.payload;
         
-        state.items = data as ConstructionResponseDto[];
+        state.items = data as unknown as ConstructionResponseDto[];
 
         // Если это первый запрос, вычисляем реальные минимумы и максимумы
         if (isInitial) {

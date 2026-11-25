@@ -7,7 +7,7 @@ import { AppLayout } from "./AppLayout";
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/construction-frontend">
       <Routes>
         <Route element={<AppLayout />}>
           <Route path="/construction" element={<ConstructionCatalogPage />} />
@@ -15,7 +15,7 @@ function App() {
           <Route path="/construction/feed/:id" element={<ConstructionFeedPage />} />
           <Route path="/users/login" element={<LoginPage />} />
           <Route path="/construction/add" element={<ConstructionAddPage />} />
-          
+
           <Route path="*" element={<ConstructionCatalogPage />} />
         </Route>
       </Routes>

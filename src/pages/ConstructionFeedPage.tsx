@@ -7,7 +7,7 @@ import { api } from "../api";
 import { CONSTRUCTION_MOCK, type ConstructionResponseDto } from "../modules/construction_mock";
 import axios from "axios";
 
-const defaultImage = "/default.jpg";
+const defaultImage = `${import.meta.env.BASE_URL}default.jpg`;
 
 export const ConstructionFeedPage: FC = () => {
   const { id } = useParams();
@@ -20,24 +20,19 @@ export const ConstructionFeedPage: FC = () => {
   const lastFetchedId = useRef<string | null>(null);
   const isAuthenticated = useSelector((state: RootState) => state.user.isAuthenticated);
 
-  // Функция для работы с мок-данными, когда бэкенд выключен (502, 404 или ошибка сети)
   const getMockFeed = (targetId?: string, isNext: boolean = false) => {
     const publishedMocks = CONSTRUCTION_MOCK.filter(item => item.status === 'published');
     if (publishedMocks.length === 0) return null;
 
     if (!targetId || !isNext) {
-      // Если ID нет или это первый вход — возвращаем самую первую карточку
       return publishedMocks[0];
     }
 
-    // Ищем текущий индекс
     const currentIndex = publishedMocks.findIndex(item => String(item.id) === String(targetId));
     
     if (currentIndex === -1 || currentIndex >= publishedMocks.length - 1) {
-      // Если дошли до конца или карточка не найдена — циклично возвращаем первую
       return publishedMocks[0];
     } else {
-      // Возвращаем следующую карточку
       return publishedMocks[currentIndex + 1];
     }
   };
@@ -63,7 +58,6 @@ export const ConstructionFeedPage: FC = () => {
           navigate(`/construction/feed/${item.id}`, { replace: true });
         }
       } else {
-        // Если структура ответа странная — падаем на моки
         const mockItem = getMockFeed(targetId, isNext);
         if (mockItem) {
           setPageData(mockItem);
@@ -71,7 +65,6 @@ export const ConstructionFeedPage: FC = () => {
         }
       }
     } catch (error: unknown) {
-      // ЕСЛИ БЭКЕНД ВЫКЛЮЧЕН (502, 404, Network Error) — ИСПОЛЬЗУЕМ МОКИ ДЛЯ ГОСТЯ
       if (axios.isAxiosError(error)) {
         const mockItem = getMockFeed(targetId, isNext);
         if (mockItem) {

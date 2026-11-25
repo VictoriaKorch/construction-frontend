@@ -11,7 +11,7 @@ interface Props {
   onDelete: (id: number) => void;
 }
 
-const defaultImage = "/default.jpg";
+const defaultImage = `${import.meta.env.BASE_URL}default.jpg`;
 
 export const ConstructionCard: FC<Props> = ({ id, title, price, imageUrl, likesCount, isCreator, onClick, onDelete }) => (
   <div className="service-card-wrapper">

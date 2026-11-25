@@ -35,8 +35,8 @@ export const ConstructionAddPage: FC = () => {
         const checkDraft = async () => {
             try {
                 const response = await api.api.constructionControllerGetDraft();
-                if (response.data) {
-                    const d = response.data as ConstructionResponseDto;
+                const d = response.data as unknown as ConstructionResponseDto | null;
+                if (d) {
                     setDraft(d);
                     
                     setTitle(d.title ?? '');
