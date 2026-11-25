@@ -1,7 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
-import mkcert from 'vite-plugin-mkcert';
 import fs from 'fs';
 import path from 'path';
 
@@ -9,7 +8,6 @@ export default defineConfig({
   base: '/construction-frontend/',
   plugins: [
     react(),
-    mkcert(),
     VitePWA({
       registerType: 'autoUpdate',
       devOptions: {
@@ -42,8 +40,8 @@ export default defineConfig({
     host: true,
     port: 5173,
     https: {
-      key: fs.readFileSync(path.resolve(__dirname, 'cert.key')),
-      cert: fs.readFileSync(path.resolve(__dirname, 'cert.crt')),
+      key: fs.readFileSync(path.resolve(import.meta.dirname, 'cert.key')),
+      cert: fs.readFileSync(path.resolve(import.meta.dirname, 'cert.crt')),
     },
     proxy: {
       '/api': {

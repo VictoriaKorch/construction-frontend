@@ -4,10 +4,10 @@ import { useNavigate } from "react-router-dom";
 import axios from 'axios';
 import type { AppDispatch, RootState } from '../store';
 import { loginSuccess, loginFailure } from '../store/userSlice';
-import { getConstructionsList } from '../store/constructionSlice'; // Импортируем экшен загрузки списка
+import { getConstructionsList } from '../store/constructionSlice';
 
 export const LoginPage: FC = () => {
-    const dispatch = useDispatch<AppDispatch>(); // Возвращаем типизацию для Thunk
+    const dispatch = useDispatch<AppDispatch>();
     const navigate = useNavigate();
     
     const error = useSelector((state: RootState) => state.user.error);
@@ -18,16 +18,11 @@ export const LoginPage: FC = () => {
         
         if (formData.username && formData.password) {
             try {
-                // Выполняем запрос через чистый axios (без кодогенерации)
                 await axios.post('/api/users/login', formData, {
                     headers: { 'Content-Type': 'application/json' }
                 });
                 
-                // Вручную передаем успешное состояние в Redux
                 dispatch(loginSuccess({ username: formData.username }));
-                
-                // ЗАСТАВЛЯЕМ REDUX СКАЧАТЬ СПИСОК ЗАНОВО!
-                // Теперь сервер увидит, что мы авторизованы, и вернет isCreator: 1 для ваших постов
                 dispatch(getConstructionsList(true)); 
                 
                 navigate('/construction'); 
@@ -40,11 +35,11 @@ export const LoginPage: FC = () => {
     };
 
     return (
-        <div className="tile-container">
-            <h1 className="tile-title" style={{ textAlign: 'center', marginTop: '40px' }}>Вход в систему</h1>
+        <div className="tile-container login-container">
+            <h1 className="tile-title" style={{ textAlign: 'center' }}>Вход в систему</h1>
             
             {error && (
-                <div style={{ color: '#d9534f', background: '#f9f2f2', padding: '10px', borderRadius: '8px', marginBottom: '16px', fontSize: '13px', textAlign: 'center' }}>
+                <div style={{ color: '#d9534f', background: '#f9f2f2', padding: '10px', borderRadius: '8px', marginBottom: '16px', fontSize: '13px', textAlign: 'center', width: '100%', maxWidth: '400px' }}>
                     {error}
                 </div>
             )}
@@ -56,7 +51,7 @@ export const LoginPage: FC = () => {
                         placeholder="Имя пользователя"
                         value={formData.username}
                         onChange={e => setFormData({...formData, username: e.target.value})}
-                        style={{ padding: '14px', borderRadius: '12px', border: '1px solid #e8e9ec', fontSize: '14px', outline: 'none' }}
+                        style={{ padding: '14px', borderRadius: '12px', border: '1px solid #e8e9ec', fontSize: '14px', outline: 'none', width: '100%' }}
                         required
                     />
                 </div>
@@ -66,7 +61,7 @@ export const LoginPage: FC = () => {
                         placeholder="Пароль"
                         value={formData.password}
                         onChange={e => setFormData({...formData, password: e.target.value})}
-                        style={{ padding: '14px', borderRadius: '12px', border: '1px solid #e8e9ec', fontSize: '14px', outline: 'none' }}
+                        style={{ padding: '14px', borderRadius: '12px', border: '1px solid #e8e9ec', fontSize: '14px', outline: 'none', width: '100%' }}
                         required
                     />
                 </div>
